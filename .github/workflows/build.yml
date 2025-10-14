@@ -1,0 +1,34 @@
+# .github/workflows/build.yml
+
+name: CI - Build e Push da Imagem Docker
+
+# Gatilho: Rodar sempre que houver um push no branch 'main'
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    # A máquina virtual que o GitHub vai usar para rodar os comandos
+    runs-on: ubuntu-latest
+
+    steps:
+      # Passo 1: Clona o seu repositório para dentro da máquina virtual
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      # Passo 2: Faz o login no Docker Hub usando os secrets
+      - name: Login no Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Passo 3: Constrói a imagem Docker e envia (push) para o Docker Hub
+      # A tag ":latest" significa que esta será a versão mais recente
+      - name: Build e push da imagem Docker
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/meu-projeto-devops:latest
