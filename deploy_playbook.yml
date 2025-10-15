@@ -1,0 +1,11 @@
+# deploy_playbook.yml
+
+- name: Fazer deploy da aplicação da estrela no Kubernetes
+  hosts: localhost # Vamos rodar este playbook a partir da própria máquina do GitHub Actions
+  connection: local
+  
+  tasks:
+    - name: Aplicar o manifesto de deployment no cluster
+      community.kubernetes.k8s: # Módulo do Ansible que sabe falar com o Kubernetes
+        state: present # Garante que os recursos definidos no arquivo existam no cluster
+        src: deployment.yml # O arquivo de configuração que criamos acima

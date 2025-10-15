@@ -1,0 +1,35 @@
+# deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: projeto-estrela-deployment
+spec:
+  replicas: 2 # Queremos 2 cópias (pods) da nossa aplicação rodando
+  selector:
+    matchLabels:
+      app: projeto-estrela
+  template:
+    metadata:
+      labels:
+        app: projeto-estrela
+    spec:
+      containers:
+      - name: container-estrela
+        image: marcelo-ids/meu-projeto-devops:latest # <-- A imagem que nosso GitHub Actions publica!
+        ports:
+        - containerPort: 5000 # A porta interna da nossa aplicação Flask
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: servico-estrela
+spec:
+  type: LoadBalancer # Expõe nossa aplicação para a internet através de um balanceador de carga
+  selector:
+    app: projeto-estrela
+  ports:
+    - protocol: TCP
+      port: 80 # A porta que o usuário acessa na internet
+      targetPort: 5000 # A porta para a qual o tráfego será direcionado nos contêineres

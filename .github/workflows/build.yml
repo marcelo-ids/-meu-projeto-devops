@@ -1,34 +1,53 @@
-# .github/workflows/build.yml
+name: CI/CD - Build, Push e Deploy da Aplicação
 
-name: CI - Build e Push da Imagem Docker
-
-# Gatilho: Rodar sempre que houver um push no branch 'main'
 on:
   push:
     branches: [ "main" ]
 
 jobs:
+  # Job 1: Build e Push (O que já temos)
   build-and-push:
-    # A máquina virtual que o GitHub vai usar para rodar os comandos
     runs-on: ubuntu-latest
-
     steps:
-      # Passo 1: Clona o seu repositório para dentro da máquina virtual
-      - name: Checkout do código
-        uses: actions/checkout@v3
-
-      # Passo 2: Faz o login no Docker Hub usando os secrets
-      - name: Login no Docker Hub
-        uses: docker/login-action@v2
+      - uses: actions/checkout@v3
+      - uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Passo 3: Constrói a imagem Docker e envia (push) para o Docker Hub
-      # A tag ":latest" significa que esta será a versão mais recente
-      - name: Build e push da imagem Docker
-        uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/meu-projeto-devops:latest
+          tags: marcelo-ids/meu-projeto-devops:latest
+
+  # Job 2: Deploy no Kubernetes (A parte nova)
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push # <-- Este job só roda DEPOIS que o build-and-push terminar com sucesso
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+       - name: Login no Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configurar o Kubectl para o AKS
+        run: |
+          az aks get-credentials --resource-group meu-rg-teste --name meu-aks-cluster --overwrite-existing
+          
+      - name: Fazer deploy no Kubernetes com Kubectl
+        run: |
+          kubectl apply -f deployment.yml
+
+      - name: Instalar Ansible e dependências do Kubernetes
+        run: |
+          pip install ansible
+          ansible-galaxy collection install community.kubernetes
+
+      - name: Executar o Playbook do Ansible para fazer o deploy
+        run: ansible-playbook deploy_playbook.yml
