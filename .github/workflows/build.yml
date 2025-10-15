@@ -28,6 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
 
+    # --- ADICIONE ESTE BLOCO DE CÓDIGO ---
+    permissions:
+      id-token: write   # Permissão para o workflow se autenticar com o Azure
+      contents: read    # Permissão para ler o conteúdo do repositório (checkout)
+    # ------------------------------------
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
